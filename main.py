@@ -69,8 +69,9 @@ def run(port):
             client_socket.close()
             continue
         if request:
-            response = generate_response(request.decode('utf-8'))
-            print('response:', response)
+            response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
+            client_socket.sendall((response_prase + str(code)).encode())
+            print('alarm_description:', alarm_description)
         logging.info('request is: %s', request)
         logging.info('address is: %s', addr)
         client_socket.close()
