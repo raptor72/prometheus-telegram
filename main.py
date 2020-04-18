@@ -5,7 +5,10 @@ import sys
 import socket
 import logging
 import datetime
+import subprocess
+from bot_class import Bot, load_config
 from optparse import OptionParser
+DEFAULT_CONFIG = './default_config'
 
 REQUEST_PARAMS = {
     'Host': 'Host',
@@ -58,23 +61,38 @@ def generate_response(request):
     return ('HTTP/1.1 200 OK\r\n', 200, alarm_description)
 
 def run(port):
+    config = load_config(DEFAULT_CONFIG)
+    #    print(config)
+    bot = Bot(config["bot_token"], config["user_list"], config["command_list"], config["admin_id"])
+#    os.spawnl(os.P_DETACH, bot.polling(none_stop=True, timeout=30))
+#     subprocess.Popen(bot.polling(none_stop=True, interval=10, timeout=30))
+#     bot.polling(none_stop=True, timeout=30)
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('127.0.0.1', port))
     server_socket.listen()
-    while True:
-        client_socket, addr = server_socket.accept()
-        request = read_all(client_socket, maxbuff=2048)
-        if len(request.strip()) == 0:
+
+    pid = os.fork()
+    if pid != 0:
+        bot.polling(none_stop=True, timeout=30)
+    else:
+        while True:
+            client_socket, addr = server_socket.accept()
+            request = read_all(client_socket, maxbuff=2048)
+            if len(request.strip()) == 0:
+                client_socket.close()
+                continue
+            if request:
+                response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
+                client_socket.sendall((response_prase + str(code)).encode())
+                print('alarm_description:', alarm_description)
+#                bot.handle_text(alarm_description)
+                bot.send_message(config["admin_id"], alarm_description)
+
+            logging.info('request is: %s', request)
+            logging.info('address is: %s', addr)
             client_socket.close()
-            continue
-        if request:
-            response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
-            client_socket.sendall((response_prase + str(code)).encode())
-            print('alarm_description:', alarm_description)
-        logging.info('request is: %s', request)
-        logging.info('address is: %s', addr)
-        client_socket.close()
     server_socket.close()
 
 if __name__ == '__main__':
