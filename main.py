@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import ast
 import sys
 import socket
 import logging
@@ -8,8 +9,10 @@ import datetime
 import subprocess
 from bot_class import Bot, load_config
 from optparse import OptionParser
-DEFAULT_CONFIG = './default_config'
+from collections import namedtuple
 
+Alarm = namedtuple('Alarm', 'alertname startsAt node')
+DEFAULT_CONFIG = './default_config'
 REQUEST_PARAMS = {
     'Host': 'Host',
     'User-Agent': 'User-Agent',
@@ -60,14 +63,31 @@ def generate_response(request):
     # print('alarm_description', alarm_description)
     return ('HTTP/1.1 200 OK\r\n', 200, alarm_description)
 
+a = {"receiver":"tlg-bot","status":"firing","alerts":[{"status":"resolved","labels":{"alertname":"NetworkChange","severity":"Warning"},"annotations":{"description":"LABELES:  end of VALUE = 6 end has been change for more than 1 minute.","summary":"Network map[] change"},"startsAt":"2020-04-18T18:25:16.014462791+04:00","endsAt":"2020-04-18T19:15:46.014462791+04:00","generatorURL":"http://linuxmint-19-xfce:9090/graph?g0.expr=sum%28node_network_address_assign_type%29+%21%3D+3\u0026g0.tab=1","fingerprint":"ef8e10c065780d35"},{"status":"firing","labels":{"alertname":"NetworkChange","severity":"warning"},"annotations":{"description":"LABELS: map[] end of VALUE = 6 end has been change for more than 1 minute.","summary":"Network map[] change"},"startsAt":"2020-04-18T19:14:31.014462791+04:00","endsAt":"0001-01-01T00:00:00Z","generatorURL":"http://linuxmint-19-xfce:9090/graph?g0.expr=sum%28node_network_address_assign_type%29+%21%3D+3\u0026g0.tab=1","fingerprint":"4c3ea395fcf5a715"}],"groupLabels":{"alertname":"NetworkChange"},"commonLabels":{"alertname":"NetworkChange"},"commonAnnotations":{"summary":"Network map[] change"},"externalURL":"http://linuxmint-19-xfce:9093","version":"4","groupKey":"{}:{alertname=\"NetworkChange\"}"}
+def make_current_alarm(alarm_description):
+    print(len(alarm_description))
+    print(type(alarm_description))
+    d = {}
+    try:
+        d.update(alarm_description)
+#        d = ast.literal_eval(alarm_description)
+    except SyntaxError:
+        logging.info("uncorrect json syntax")
+    try:
+        alertname = d['alerts'][0]['labels']['alertname']
+    except:
+        logging.info("could not parse alertname")
+    startsAt = datetime.datetime.strptime(d['alerts'][0]['startsAt'][:26], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
+    node = d['externalURL']
+    current_alarm = Alarm(alertname, startsAt, node)
+    return current_alarm
+
+
 def run(port):
+    all_alarms = []
     config = load_config(DEFAULT_CONFIG)
     #    print(config)
     bot = Bot(config["bot_token"], config["user_list"], config["command_list"], config["admin_id"])
-#    os.spawnl(os.P_DETACH, bot.polling(none_stop=True, timeout=30))
-#     subprocess.Popen(bot.polling(none_stop=True, interval=10, timeout=30))
-#     bot.polling(none_stop=True, timeout=30)
-
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('127.0.0.1', port))
@@ -88,8 +108,11 @@ def run(port):
                 client_socket.sendall((response_prase + str(code)).encode())
                 print('alarm_description:', alarm_description)
 #                bot.handle_text(alarm_description)
-                bot.send_message(config["admin_id"], alarm_description)
-
+#                bot.send_message(config["admin_id"], alarm_description)
+                current_alarm = make_current_alarm(alarm_description)
+                if not current_alarm in all_alarms:
+                    all_alarms.append(current_alarm)
+                    bot.send_message(config["admin_id"], alarm_description)
             logging.info('request is: %s', request)
             logging.info('address is: %s', addr)
             client_socket.close()
