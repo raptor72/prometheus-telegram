@@ -109,12 +109,11 @@ def run(port):
             if request:
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
                 client_socket.sendall((response_prase + str(code)).encode())
-                print('alarm_description:', alarm_description)
-
                 current_alarm = make_current_alarm(alarm_description)
                 if not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
-                    bot.send_message(config["admin_id"], alarm_description)
+                    for user in config['user_list']:
+                        bot.send_message(user, alarm_description)
             client_socket.close()
     server_socket.close()
 
