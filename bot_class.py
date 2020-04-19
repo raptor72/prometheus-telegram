@@ -22,34 +22,79 @@ def load_config(config_path):
         config = json.load(conf, encoding='utf8')
     return config
 
+def get_grafana_dashboards(g_url, g_token):
+    dashboards_array = []
+    headers = {'Content-type': 'application/json'}
+    headers.update(g_token)
+    get_data_req = requests.get(g_url + '/api/search?query=&', headers=headers)
+    pars_json = json.loads(get_data_req.text)
+    for dash in pars_json:
+        dashboards_array.append(dash['uri'][3::])
+    return dashboards_array
+
+def get_grafana_panels(g_token, g_url, e_dash):
+    panels = []
+    headers = {'Content-type': 'application/json'}
+    headers.update(g_token)
+#    dashboard_names = ['node-exporter-full', 'prometheus-2-0-stats', 'prometheus-stats']
+    get_dashboard = requests.get(g_url + '/api/dashboards/db/' + e_dash, headers=headers)
+    pars_json = json.loads(get_dashboard.text)
+    for dashboard in pars_json['dashboard']['panels']:
+#        print(dashboard['id'], dashboard['title'])
+        panels.append({'id': dashboard['id'], 'title': dashboard['title']})
+    return panels
+
 
 class Bot(telebot.TeleBot):
     def __init__(self, bot_token, user_list, command_list, admin_id):
         super().__init__(bot_token)
         bot = self
-#        self.bot_token = bot_token
         self.user_list = user_list
         self.command_list = command_list
         self.admin_id = admin_id
-#        self.bot = telebot.TeleBot(bot_token)
+        self.dashboards = get_grafana_dashboards(grafana_url, grafana_token)
 
-
-        def prepare_keyboard(self, *args):
+        def prepare_keyboard(lst, add_slash=False):
             user_markup = telebot.types.ReplyKeyboardMarkup()
-            user_markup.row(*args)
+            # if add_slash:
+            #     for i in lst:
+            #         user_markup.row('/' + i)
+            #     return user_markup
+            # for i in lst:
+            #     user_markup.row(i)
+            # return user_markup
+            for i in lst:
+                if add_slash:
+                    user_markup.row('/' + i)
+                else:
+                    user_markup.row(i)
             return user_markup
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
-            # if self.check_user(message.from_user.id) is True:
-            #     bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard('/start'))
-            # else:
             #     bot.send_message(message.from_user.id, 'What is your name?', reply_markup=prepare_keyboard('but1', 'but2'))
-            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard('/start'))
+#            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard('/start'))
+            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+#            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard(get_grafana_dashboards(grafana_url, grafana_token)))
+
+#        @bot.message_handler(commands=self.dashboards, content_types=['text'])
+        @bot.message_handler(commands=self.dashboards)
+        def handle_dashboards(message):
+            panels = get_grafana_panels(grafana_token, grafana_url , message.text.replace('/',''))
+            global panels_title
+            panels_title = []
+            for i in panels:
+                panels_title.append(i['title'])
+            bot.send_message(admin_id, 'valid dashboard', reply_markup=prepare_keyboard(panels_title))
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
-            bot.send_message(admin_id, message.text)
+            print(panels_title)
+            if message.text in panels_title:
+                bot.send_message(admin_id, 'here prepare download image')
+            else:
+                bot.send_message(admin_id, 'coud not find dashboard: ' + message.text)
+
 
 
 # @bot.message_handler(content_types=['text'])

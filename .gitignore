@@ -3,3 +3,4 @@ __pycache__/
 config.py
 default_config
 bot_class.pyc
+dev.py
