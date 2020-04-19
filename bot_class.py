@@ -45,12 +45,11 @@ def get_grafana_panels(g_token, g_url, e_dash):
 
 
 def download_image(dasboard, panelId, g_token):
-    twelve_hours = datetime.timedelta(hours=12)
     now = datetime.datetime.now()
-    now12 = datetime.datetime.now() - twelve_hours
+    now12 = datetime.datetime.now() - datetime.timedelta(hours=12)
     stimpenow = str(time.mktime(now.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
     stimpe12 = str(time.mktime(now12.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
-    url = grafana_url + '/render/dashboard-solo/db/' + dasboard + '?orgId=1&from=' + stimpe12 + '&to=' + stimpenow + '&panelId=' + panelId + '&width=1000&height=500'
+    url = ''.join([grafana_url, '/render/dashboard-solo/db/', dasboard, '?orgId=1&from=', stimpe12, '&to=', stimpenow, '&panelId=', panelId, '&width=1000&height=500'])
     rec =  requests.get(url, verify = False, headers = g_token, timeout = 30)
     return rec.content
 
@@ -101,17 +100,20 @@ class Bot(telebot.TeleBot):
                         return i['id']
 
             try:
+            #     if globals()['dashboard'] is not null:
+                if message.text == 'go back':
+                    bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
                 if message.text in panels_title:
                     id = get_id_by_title(panels, message.text)
                     bot.send_message(admin_id, 'Prepare download image')
                     screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
                     bot.send_photo(message.from_user.id, screenshot)
-                if message.text == 'go back':
-                    bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
                 else:
-                    bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
-            except:
-                bot.send_message(message.from_user.id, 'You should choice correct dashboard at firs', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+                    if message.text != 'go back':
+                        bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
+
+            except NameError:
+                 bot.send_message(message.from_user.id, 'You should choice correct dashboard at firs', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
 
 
 
