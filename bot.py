@@ -44,11 +44,9 @@ def download_image(dasboard, panelId, g_url, g_token, delta=12):
 
 
 class Bot(telebot.TeleBot):
-    def __init__(self, bot_token, user_list, config):
-        super().__init__(bot_token)
+    def __init__(self, config):
+        super().__init__(config['bot_token'])
         bot = self
-        self.user_list = user_list
-        self.command_list = config
         self.dashboards = get_grafana_dashboards(config['grafana_url'], config['grafana_token'])
         apihelper.proxy = config['apihelper_proxy']
 

@@ -8,7 +8,7 @@ import socket
 import logging
 import datetime
 import subprocess
-from bot_class import Bot
+from bot import Bot
 from optparse import OptionParser
 from collections import namedtuple
 
@@ -88,7 +88,7 @@ def make_current_alarm(alarm_description):
 def run(port):
     all_alarms = []
     config = load_config(DEFAULT_CONFIG)
-    bot = Bot(config["bot_token"], config["user_list"], config)
+    bot = Bot(config)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('127.0.0.1', port))
