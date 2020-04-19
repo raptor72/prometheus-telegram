@@ -1,0 +1,10 @@
+{
+"apihelper_proxy": {"https":"socks5://tlg-user-id:password@proxy:port"},
+"grafana_token": {"Authorization": "Bearer some_text"},
+"image_path": "/home/user/Desktop/Projects/prometheus-telegram/images",
+"grafana_url": "http://127.0.0.61:3000",
+"bot_token": "12345678:ToKen",
+"user_list": [1234567, 4567890],
+"logfile": "/home/user/Desktop/Projects/prometheus-telegram/log.txt",
+"admin_id": 1234567
+}

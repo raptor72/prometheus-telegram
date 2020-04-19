@@ -3,22 +3,31 @@
 import os
 import ast
 import sys
+import json
 import socket
 import logging
 import datetime
 import subprocess
-from bot_class import Bot, load_config
+from bot_class import Bot
 from optparse import OptionParser
 from collections import namedtuple
 
 Alarm = namedtuple('Alarm', 'alertname startsAt node')
+
 DEFAULT_CONFIG = './default_config'
+
 REQUEST_PARAMS = {
     'Host': 'Host',
     'User-Agent': 'User-Agent',
     'Content-Length': 'Content-Length',
     'Content-Type': 'Content-Type'
 }
+
+
+def load_config(config_path):
+    with open(config_path, 'rb') as conf:
+        config = json.load(conf, encoding='utf8')
+    return config
 
 def read_all(sock, maxbuff, TIMEOUT=5):
     data = b''
@@ -38,13 +47,10 @@ def parse_request(request):
     try:
         url = parsed[1].split('?')[0]
         for i in request.split('\r\n'):
-#            print('type:', i)
             try:
-                # print(REQUEST_PARAMS[i.split(':')[0]])
                 headers.update({REQUEST_PARAMS[i.split(':')[0]]: i.split(':')[1].strip()})
             except:
                 continue
-        print(headers)
         return method, url, headers
     except:
         return method, '', headers
@@ -60,7 +66,6 @@ def generate_response(request):
     if not 'json' in headers['Content-Type']:
         return ('HTTP/1.1 405 Unsupported Content-Type\r\n', 405, None)
     alarm_description = request.split('\r\n\r\n')[1]
-    # print('alarm_description', alarm_description)
     return ('HTTP/1.1 200 OK\r\n', 200, alarm_description)
 
 
@@ -83,8 +88,7 @@ def make_current_alarm(alarm_description):
 def run(port):
     all_alarms = []
     config = load_config(DEFAULT_CONFIG)
-    #    print(config)
-    bot = Bot(config["bot_token"], config["user_list"], config["command_list"])
+    bot = Bot(config["bot_token"], config["user_list"], config)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('127.0.0.1', port))
