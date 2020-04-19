@@ -69,4 +69,4 @@ receivers:
 
 Пример выбора дашборда:
 
-![alt text](images/choice_panel.PNG)
+![alt text](images/choice_dashboard.PNG)
