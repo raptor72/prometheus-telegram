@@ -107,11 +107,11 @@ def run(port):
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
                 client_socket.sendall((response_prase + str(code)).encode())
                 print('alarm_description:', alarm_description)
-#                bot.handle_text(alarm_description)
-#                 current_alarm = make_current_alarm(alarm_description)
-#                 if not current_alarm in all_alarms:
-#                     all_alarms.append(current_alarm)
-#                     bot.send_message(config["admin_id"], alarm_description)
+
+                current_alarm = make_current_alarm(alarm_description)
+                if not current_alarm in all_alarms:
+                    all_alarms.append(current_alarm)
+                    bot.send_message(config["admin_id"], alarm_description)
             client_socket.close()
     server_socket.close()
 

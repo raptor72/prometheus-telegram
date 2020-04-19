@@ -40,9 +40,19 @@ def get_grafana_panels(g_token, g_url, e_dash):
     get_dashboard = requests.get(g_url + '/api/dashboards/db/' + e_dash, headers=headers)
     pars_json = json.loads(get_dashboard.text)
     for dashboard in pars_json['dashboard']['panels']:
-#        print(dashboard['id'], dashboard['title'])
         panels.append({'id': dashboard['id'], 'title': dashboard['title']})
     return panels
+
+
+def download_image(dasboard, panelId, g_token):
+    twelve_hours = datetime.timedelta(hours=12)
+    now = datetime.datetime.now()
+    now12 = datetime.datetime.now() - twelve_hours
+    stimpenow = str(time.mktime(now.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
+    stimpe12 = str(time.mktime(now12.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
+    url = grafana_url + '/render/dashboard-solo/db/' + dasboard + '?orgId=1&from=' + stimpe12 + '&to=' + stimpenow + '&panelId=' + panelId + '&width=1000&height=500'
+    rec =  requests.get(url, verify = False, headers = g_token, timeout = 30)
+    return rec.content
 
 
 class Bot(telebot.TeleBot):
@@ -56,13 +66,6 @@ class Bot(telebot.TeleBot):
 
         def prepare_keyboard(lst, add_slash=False):
             user_markup = telebot.types.ReplyKeyboardMarkup()
-            # if add_slash:
-            #     for i in lst:
-            #         user_markup.row('/' + i)
-            #     return user_markup
-            # for i in lst:
-            #     user_markup.row(i)
-            # return user_markup
             for i in lst:
                 if add_slash:
                     user_markup.row('/' + i)
@@ -72,16 +75,14 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
-            #     bot.send_message(message.from_user.id, 'What is your name?', reply_markup=prepare_keyboard('but1', 'but2'))
-#            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard('/start'))
             bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
-#            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard(get_grafana_dashboards(grafana_url, grafana_token)))
 
-#        @bot.message_handler(commands=self.dashboards, content_types=['text'])
+
         @bot.message_handler(commands=self.dashboards)
         def handle_dashboards(message):
+            global dashboard, panels_title, panels
+            dashboard = message.text
             panels = get_grafana_panels(grafana_token, grafana_url , message.text.replace('/',''))
-            global panels_title
             panels_title = []
             for i in panels:
                 panels_title.append(i['title'])
@@ -89,9 +90,22 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
+            print(dashboard)
             print(panels_title)
+            print('##################')
+            print(panels) #[{'id': 5, 'title': 'Uptime'}, {'id': 6, 'title': 'Local Storage Memory Series'}]
+
+            def get_id_by_title(panels, title):
+                for i in panels:
+                    if i['title'] == title:
+                        return i['id']
+
             if message.text in panels_title:
+                id = get_id_by_title(panels, message.text)
                 bot.send_message(admin_id, 'here prepare download image')
+                screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
+#                print(type(screenshot))
+                bot.send_photo(admin_id, screenshot)
             else:
                 bot.send_message(admin_id, 'coud not find dashboard: ' + message.text)
 
