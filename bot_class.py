@@ -89,23 +89,23 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
-            print(dashboard)
-            print(panels_title)
-            print('##################')
-            print(panels) #[{'id': 5, 'title': 'Uptime'}, {'id': 6, 'title': 'Local Storage Memory Series'}]
 
             def get_id_by_title(panels, title):
                 for i in panels:
                     if i['title'] == title:
                         return i['id']
 
-            if message.text in panels_title:
-                id = get_id_by_title(panels, message.text)
-                bot.send_message(admin_id, 'here prepare download image')
-                screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
-                bot.send_photo(message.from_user.id, screenshot)
-            else:
-                bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
+            try:
+                if message.text in panels_title:
+                    id = get_id_by_title(panels, message.text)
+                    bot.send_message(admin_id, 'here prepare download image')
+                    screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
+                    bot.send_photo(message.from_user.id, screenshot)
+                else:
+                    bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
+            except:
+                bot.send_message(message.from_user.id, 'You should choice correct dashboard at firs', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+
 
 
 
