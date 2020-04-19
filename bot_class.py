@@ -63,14 +63,19 @@ class Bot(telebot.TeleBot):
         self.command_list = command_list
         self.dashboards = get_grafana_dashboards(grafana_url, grafana_token)
 
+
         def prepare_keyboard(lst, add_slash=False):
             user_markup = telebot.types.ReplyKeyboardMarkup()
-            for i in lst:
-                if add_slash:
+            if add_slash:
+                for i in lst:
                     user_markup.row('/' + i)
-                else:
+                return user_markup
+            else:
+                for i in lst:
                     user_markup.row(i)
+                user_markup.row('go back')
             return user_markup
+
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
@@ -98,9 +103,11 @@ class Bot(telebot.TeleBot):
             try:
                 if message.text in panels_title:
                     id = get_id_by_title(panels, message.text)
-                    bot.send_message(admin_id, 'here prepare download image')
+                    bot.send_message(admin_id, 'Prepare download image')
                     screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
                     bot.send_photo(message.from_user.id, screenshot)
+                if message.text == 'go back':
+                    bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
                 else:
                     bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
             except:
