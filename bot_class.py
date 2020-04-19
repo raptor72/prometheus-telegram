@@ -56,12 +56,11 @@ def download_image(dasboard, panelId, g_token):
 
 
 class Bot(telebot.TeleBot):
-    def __init__(self, bot_token, user_list, command_list, admin_id):
+    def __init__(self, bot_token, user_list, command_list):
         super().__init__(bot_token)
         bot = self
         self.user_list = user_list
         self.command_list = command_list
-        self.admin_id = admin_id
         self.dashboards = get_grafana_dashboards(grafana_url, grafana_token)
 
         def prepare_keyboard(lst, add_slash=False):
@@ -86,7 +85,7 @@ class Bot(telebot.TeleBot):
             panels_title = []
             for i in panels:
                 panels_title.append(i['title'])
-            bot.send_message(admin_id, 'valid dashboard', reply_markup=prepare_keyboard(panels_title))
+            bot.send_message(message.from_user.id, 'valid dashboard', reply_markup=prepare_keyboard(panels_title))
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
@@ -104,10 +103,9 @@ class Bot(telebot.TeleBot):
                 id = get_id_by_title(panels, message.text)
                 bot.send_message(admin_id, 'here prepare download image')
                 screenshot = download_image(dashboard.replace('/',''), str(id), grafana_token)
-#                print(type(screenshot))
-                bot.send_photo(admin_id, screenshot)
+                bot.send_photo(message.from_user.id, screenshot)
             else:
-                bot.send_message(admin_id, 'coud not find dashboard: ' + message.text)
+                bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
 
 
 
