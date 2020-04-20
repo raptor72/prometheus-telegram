@@ -85,13 +85,14 @@ def make_current_alarm(alarm_description):
     return current_alarm
 
 
-def run(port):
+def run(host, port):
     all_alarms = []
     config = load_config(DEFAULT_CONFIG)
     bot = Bot(config)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(('127.0.0.1', port))
+    server_socket.bind((host, port))
+#    server_socket.bind(('172.17.0.2', port))
     server_socket.listen()
 
     pid = os.fork()
@@ -120,9 +121,11 @@ def run(port):
 if __name__ == '__main__':
     op = OptionParser()
     op.add_option("-p", "--port", action="store", type=int, default=8080)
+    op.add_option("-H", "--host", action="store", type=str, default='127.0.0.1')
     op.add_option("-l", "--log", action="store", default=None)
     (opts, args) = op.parse_args()
     logging.basicConfig(filename=opts.log, level=logging.INFO,
                         format='[%(asctime)s] %(levelname).1s %(message)s', datefmt='%Y.%m.%d %H:%M:%S')
-    logging.info('Starting server at %s' % opts.port)
-    run(opts.port)
+    logging.info('Bind address is %s' % opts.host)
+    logging.info('Starting listen at %s' % opts.port)
+    run(opts.host, opts.port)
