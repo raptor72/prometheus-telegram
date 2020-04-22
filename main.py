@@ -31,6 +31,7 @@ def load_config(config_path):
         config = json.load(conf, encoding='utf8')
     return config
 
+
 def read_all(sock, maxbuff, TIMEOUT=5):
     data = b''
     sock.settimeout(TIMEOUT)
@@ -52,7 +53,6 @@ def parse_request(request):
         except:
             continue
     return method, headers
-
 
 
 def generate_response(request):
@@ -84,6 +84,7 @@ def make_current_alarm(alarm_description):
     current_alarm = Alarm(alertname, startsAt, node)
     return current_alarm
 
+
 def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
@@ -101,6 +102,7 @@ def check_config(config_path):
          logging.error('Syntax error in config file')
          return False
     return True
+
 
 def run(host, port, conf):
     all_alarms = []
@@ -147,6 +149,7 @@ def run(host, port, conf):
                                 bot.send_message(user, alarm_description)
             client_socket.close()
     server_socket.close()
+
 
 if __name__ == '__main__':
     op = OptionParser()

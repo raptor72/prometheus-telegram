@@ -14,7 +14,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-
 def get_grafana_dashboards(g_url, g_token):
     dashboards_array = []
     headers = {'Content-type': 'application/json'}
@@ -24,6 +23,7 @@ def get_grafana_dashboards(g_url, g_token):
     for dash in pars_json:
         dashboards_array.append(dash['uri'][3::])
     return dashboards_array
+
 
 def get_grafana_panels(g_token, g_url, e_dash):
     panels = []
@@ -78,6 +78,7 @@ class Bot(telebot.TeleBot):
             bot.send_message(message.from_user.id, 'Bot starting. Add your alarm subscription by /regexp command. For more details use /help',
                              reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
 
+
         @bot.message_handler(commands=['help'])
         def handle_help(message):
             bot.send_message(message.from_user.id, """
@@ -102,6 +103,7 @@ class Bot(telebot.TeleBot):
             except IndexError:
                 bot.send_message(message.from_user.id, 'Type correct regexp')
 
+
         @bot.message_handler(commands=['list'])
         def handle_regexp(message):
             path = Path(config['users_file'])
@@ -122,6 +124,7 @@ class Bot(telebot.TeleBot):
             for i in panels:
                 panels_title.append(i['title'])
             bot.send_message(message.from_user.id, 'Valid dashboard', reply_markup=prepare_keyboard(panels_title))
+
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
