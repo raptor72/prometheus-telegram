@@ -46,19 +46,17 @@ def parse_request(request):
     headers = {}
     parsed = request.split('\r\n\r\n')[0].split(' ')
     method = parsed[0]
-    try:
-        url = parsed[1].split('?')[0]
-        for i in request.split('\r\n'):
-            try:
-                headers.update({REQUEST_PARAMS[i.split(':')[0]]: i.split(':')[1].strip()})
-            except:
-                continue
-        return method, url, headers
-    except:
-        return method, '', headers
+    for i in request.split('\r\n'):
+        try:
+            headers.update({REQUEST_PARAMS[i.split(':')[0]]: i.split(':')[1].strip()})
+        except:
+            continue
+    return method, headers
+
+
 
 def generate_response(request):
-    method, url, headers = parse_request(request)
+    method, headers = parse_request(request)
     if method not in ['POST']:
         return ('HTTP/1.1 405 Method not allowed\r\n', 405, None)
     if headers == {}:

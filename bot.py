@@ -94,7 +94,7 @@ class Bot(telebot.TeleBot):
             try:
                 expression = message.text.split(" ")[1]
                 try:
-                    print(expression)
+                    logging.info(f'Update expression for user {message.from_user.id} to: {expression}')
                     update_users_regexp(config['users_file'], {str(message.from_user.id): str(expression)})
                     bot.send_message(message.from_user.id, 'expression update for {}'.format(expression))
                 except:
