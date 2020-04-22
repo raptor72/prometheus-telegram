@@ -123,7 +123,10 @@ def run(host, port):
                             users = json.load(users, encoding='utf8')
                     print('users: ', users)
                     for user in users:
-                        res = re.findall(r'%s' % re.escape(users[user].lower()), current_alarm.alertname.lower())
+                        if users[user] in ['*', 'all', '\w', 'All']:
+                            res = re.findall('\w', current_alarm.alertname.lower())
+                        else:
+                            res = re.findall(r'%s' % re.escape(users[user].lower()), current_alarm.alertname.lower())
                         if res:
                             bot.send_message(user, alarm_description)
             client_socket.close()
