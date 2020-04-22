@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 
 import os
+import re
 import time
 import json
 import telebot
+import logging
 import requests
 import datetime
+from pathlib import Path
 from telebot import apihelper
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -43,6 +46,13 @@ def download_image(dasboard, panelId, g_url, g_token, delta=12):
     return rec.content
 
 
+def update_users_regexp(config_path, frame):
+    path = Path(config_path)
+    data = json.loads(path.read_text(encoding='utf-8'))
+    data.update(frame)
+    path.write_text(json.dumps(data), encoding='utf-8')
+
+
 class Bot(telebot.TeleBot):
     def __init__(self, config):
         super().__init__(config['bot_token'])
@@ -65,7 +75,42 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
-            bot.send_message(message.from_user.id, 'Starting', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+            bot.send_message(message.from_user.id, 'Bot starting. Add your alarm subscription by /regexp command. For more details use /help',
+                             reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+
+        @bot.message_handler(commands=['help'])
+        def handle_help(message):
+            bot.send_message(message.from_user.id, """
+            Use /regexp to add your alarm subscription. Type the word after spase. For exhample '/regexp mem'. 
+            Case is doesn't matter: 'mem' or 'Mem' will work the same.
+            If you need more than one kind of alarm type many words split by '|'. For exhample 'mem|cpu|load'.
+            If you wish recieve all alarms type * or all.
+            If you want check your subscribe use commant /list
+            """
+                             )
+
+        @bot.message_handler(commands=['regexp'])
+        def handle_regexp(message):
+            try:
+                expression = message.text.split(" ")[1]
+                try:
+                    print(expression)
+                    update_users_regexp('users', {str(message.from_user.id): str(expression)})
+                    bot.send_message(message.from_user.id, 'expression update for {}'.format(expression))
+                except:
+                    logging.info('Could not update regexp')
+            except IndexError:
+                bot.send_message(message.from_user.id, 'Type correct regexp')
+
+        @bot.message_handler(commands=['list'])
+        def handle_regexp(message):
+            path = Path('users')
+            data = json.loads(path.read_text(encoding='utf-8'))
+            try:
+                expression = data[str(message.from_user.id)]
+                bot.send_message(message.from_user.id, 'Your regexp is: {}'.format(expression))
+            except KeyError:
+                bot.send_message(message.from_user.id, 'You are not subscriber. Add your regexp. If You have any questions use /help')
 
 
         @bot.message_handler(commands=self.dashboards)
