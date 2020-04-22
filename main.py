@@ -62,11 +62,11 @@ def generate_response(request):
     if method not in ['POST']:
         return ('HTTP/1.1 405 Method not allowed\r\n', 405, None)
     if headers == {}:
-        return ('HTTP/1.1 405 Can not parse headers format\r\n', 405, None)
+        return ('HTTP/1.1 422 Can not parse headers format\r\n', 422, None)
     if not 'Alertmanager' in headers['User-Agent']:
-        return ('HTTP/1.1 405 Unsupported sender\r\n', 405, None)
+        return ('HTTP/1.1 400 Unsupported sender\r\n', 400, None)
     if not 'json' in headers['Content-Type']:
-        return ('HTTP/1.1 405 Unsupported Content-Type\r\n', 405, None)
+        return ('HTTP/1.1 400 Unsupported Content-Type\r\n', 400, None)
     alarm_description = request.split('\r\n\r\n')[1]
     return ('HTTP/1.1 200 OK\r\n', 200, alarm_description)
 
