@@ -75,9 +75,19 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
-            bot.send_message(message.from_user.id, 'Type regexp for alarms hwich you need to recieve. Split regexp by "|"',
+            bot.send_message(message.from_user.id, 'Bot starting. Add your alarm subscription by /regexp command. For more details use /help',
                              reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
 
+        @bot.message_handler(commands=['help'])
+        def handle_help(message):
+            bot.send_message(message.from_user.id, """
+            Use /regexp to add your alarm subscription. Type the word after spase. For exhample '/regexp mem'. 
+            Case is doesn't matter: 'mem' or 'Mem' will work the same.
+            If you need more than one kind of alarm type many words split by '|'. For exhample 'mem|cpu|load'.
+            If you wish recieve all alarms type * or all.
+            If you want check your subscribe use commant /list
+            """
+                             )
 
         @bot.message_handler(commands=['regexp'])
         def handle_regexp(message):
