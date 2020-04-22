@@ -76,20 +76,38 @@ def make_current_alarm(alarm_description):
     try:
         d = ast.literal_eval(alarm_description)
     except SyntaxError:
-        logging.info("uncorrect json syntax")
+        logging.error('Uncorrect json syntax in received alarm_description')
     try:
         alertname = d['alerts'][0]['labels']['alertname']
     except:
-        logging.info("could not parse alertname")
+        logging.error('Could not parse alertname')
     startsAt = datetime.datetime.strptime(d['alerts'][0]['startsAt'][:26], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
     node = d['externalURL']
     current_alarm = Alarm(alertname, startsAt, node)
     return current_alarm
 
+def check_config(config_path):
+    try:
+        with open(config_path, 'rb') as conf:
+            data = json.load(conf, encoding='utf8')
+        if len(data) != 8:
+            logging.error(f'Wrong count of config params. Should be 8 but exists is {len(data)}')
+            return False
+        for key in data.keys():
+            if key in ['apihelper_proxy', 'grafana_token', 'image_path',
+                       'grafana_url', 'bot_token', 'user_list', 'logfile', 'admin_id']:
+                continue
+            else:
+                logging.error(f'Wrong config walue for {key}')
+                return False
+    except json.decoder.JSONDecodeError:
+         logging.error('Syntax error in config file')
+         return False
+    return True
 
-def run(host, port):
+def run(host, port, conf):
     all_alarms = []
-    config = load_config(DEFAULT_CONFIG)
+    config = load_config(conf)
     bot = Bot(config)
     with open('users', 'rb') as users:
         users = json.load(users, encoding='utf8')
@@ -107,8 +125,8 @@ def run(host, port):
         while True:
             client_socket, addr = server_socket.accept()
             request = read_all(client_socket, maxbuff=2048)
-            logging.info('request is: %s', request)
-            logging.info('address is: %s', addr)
+            logging.debug(f'request is: {request}')
+            logging.debug(f'address is: {addr}')
             if len(request.strip()) == 0:
                 client_socket.close()
                 continue
@@ -121,7 +139,7 @@ def run(host, port):
                     if os.path.getmtime('users') > dt.today().timestamp():
                         with open('users', 'rb') as users:
                             users = json.load(users, encoding='utf8')
-                    print('users: ', users)
+                    logging.debug(f'Users is {users}')
                     if len(users) > 0:
                         for user in users:
                             if users[user] in ['*', 'all', '\w', 'All']:
@@ -135,12 +153,20 @@ def run(host, port):
 
 if __name__ == '__main__':
     op = OptionParser()
-    op.add_option("-p", "--port", action="store", type=int, default=8080)
-    op.add_option("-H", "--host", action="store", type=str, default='127.0.0.1')
-    op.add_option("-l", "--log", action="store", default=None)
+    op.add_option('-p', '--port', action='store', type=int, default=8080)
+    op.add_option('-H', '--host', action='store', type=str, default='127.0.0.1')
+    op.add_option('-c', '--config', action='store', type=str, default=DEFAULT_CONFIG)
+    op.add_option('-l', '--log', action='store', default=None)
     (opts, args) = op.parse_args()
     logging.basicConfig(filename=opts.log, level=logging.INFO,
                         format='[%(asctime)s] %(levelname).1s %(message)s', datefmt='%Y.%m.%d %H:%M:%S')
-    logging.info('Bind address is %s' % opts.host)
-    logging.info('Starting listen at %s' % opts.port)
-    run(opts.host, opts.port)
+    logging.info(f'Bind address is {opts.host}')
+    logging.info(f'Starting listen at {opts.port}')
+    if check_config(opts.config):
+        logging.info(f'Use correct configuration file {opts.config}')
+        try:
+            run(opts.host, opts.port, opts.config)
+        except:
+            logging.exception('Fatal unexpected error')
+    else:
+        logging.error(f'Used wrong configuration file')

@@ -121,7 +121,7 @@ class Bot(telebot.TeleBot):
             panels_title = []
             for i in panels:
                 panels_title.append(i['title'])
-            bot.send_message(message.from_user.id, 'valid dashboard', reply_markup=prepare_keyboard(panels_title))
+            bot.send_message(message.from_user.id, 'Valid dashboard', reply_markup=prepare_keyboard(panels_title))
 
         @bot.message_handler(content_types=['text'])
         def handle_text(message):
@@ -147,11 +147,7 @@ class Bot(telebot.TeleBot):
                     if message.text != 'go back':
                         bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
             except NameError:
-                 bot.send_message(message.from_user.id, 'You should choice correct dashboard at firs', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+                 bot.send_message(message.from_user.id, 'You should choice correct dashboard or type right command',
+                                  reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
 
 
-# if __name__ == "__main__":
-#      config = load_config(DEFAULT_CONFIG)
-# #    print(config)
-#     bot = Bot(config["bot_token"], config["user_list"], config["command_list"], config["admin_id"])
-#        bot.polling(none_stop=True, timeout=30)
