@@ -95,7 +95,7 @@ class Bot(telebot.TeleBot):
                 expression = message.text.split(" ")[1]
                 try:
                     print(expression)
-                    update_users_regexp('users', {str(message.from_user.id): str(expression)})
+                    update_users_regexp(config['users_file'], {str(message.from_user.id): str(expression)})
                     bot.send_message(message.from_user.id, 'expression update for {}'.format(expression))
                 except:
                     logging.info('Could not update regexp')
@@ -104,7 +104,7 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=['list'])
         def handle_regexp(message):
-            path = Path('users')
+            path = Path(config['users_file'])
             data = json.loads(path.read_text(encoding='utf-8'))
             try:
                 expression = data[str(message.from_user.id)]
@@ -142,7 +142,7 @@ class Bot(telebot.TeleBot):
                         screenshot = download_image(dashboard.replace('/',''), str(id), config['grafana_url'], config['grafana_token'])
                         bot.send_photo(message.from_user.id, screenshot)
                     except:
-                        print('Could not send image')
+                        logging.info('Could not send image')
                 else:
                     if message.text != 'go back':
                         bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)

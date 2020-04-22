@@ -2,5 +2,6 @@
 "apihelper_proxy": {"https":"socks5://tlg-user-id:password@proxy:port"},
 "grafana_token": {"Authorization": "Bearer some_text"},
 "grafana_url": "http://127.0.0.61:3000",
-"bot_token": "12345678:ToKen"
+"bot_token": "12345678:ToKen",
+"users_file": "users"
 }

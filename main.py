@@ -90,11 +90,11 @@ def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
             data = json.load(conf, encoding='utf8')
-        if len(data) != 4:
+        if len(data) != 5:
             logging.error(f'Wrong count of config params. Should be 8 but exists is {len(data)}')
             return False
         for key in data.keys():
-            if key in ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token']:
+            if key in ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token', 'users_file']:
                 continue
             else:
                 logging.error(f'Wrong config walue for {key}')
@@ -108,9 +108,9 @@ def run(host, port, conf):
     all_alarms = []
     config = load_config(conf)
     bot = Bot(config)
-    with open('users', 'rb') as users:
+    with open(config['users_file'], 'rb') as users:
         users = json.load(users, encoding='utf8')
-    print('firs load users: ', users)
+    logging.debug(f'Firs load users is: {users}')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
@@ -124,8 +124,8 @@ def run(host, port, conf):
         while True:
             client_socket, addr = server_socket.accept()
             request = read_all(client_socket, maxbuff=2048)
-            logging.debug(f'request is: {request}')
-            logging.debug(f'address is: {addr}')
+            logging.info(f'request is: {request}')
+            logging.info(f'address is: {addr}')
             if len(request.strip()) == 0:
                 client_socket.close()
                 continue
@@ -135,13 +135,13 @@ def run(host, port, conf):
                 current_alarm = make_current_alarm(alarm_description)
                 if not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
-                    if os.path.getmtime('users') > dt.today().timestamp():
-                        with open('users', 'rb') as users:
+                    if os.path.getmtime(config['users_file']) > dt.today().timestamp():
+                        with open(config['users_file'], 'rb') as users:
                             users = json.load(users, encoding='utf8')
-                    logging.debug(f'Users is {users}')
+                    logging.info(f'Users is {users}')
                     if len(users) > 0:
                         for user in users:
-                            if users[user] in ['*', 'all', '\w', 'All']:
+                            if users[user] in ['*', 'all', '\w', 'All', 'ALL']:
                                 res = re.findall('\w', current_alarm.alertname.lower())
                             else:
                                 res = re.findall(r'%s' % re.escape(users[user].lower()), current_alarm.alertname.lower())
