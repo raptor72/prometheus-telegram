@@ -88,9 +88,9 @@ class Bot(telebot.TeleBot):
                     update_users_regexp('users', {str(message.from_user.id): str(expression)})
                     bot.send_message(message.from_user.id, 'expression update for {}'.format(expression))
                 except:
-                    logging.info('could not update regexp')
+                    logging.info('Could not update regexp')
             except IndexError:
-                bot.send_message(message.from_user.id, 'type correct regexp')
+                bot.send_message(message.from_user.id, 'Type correct regexp')
 
         @bot.message_handler(commands=['list'])
         def handle_regexp(message):
@@ -100,7 +100,7 @@ class Bot(telebot.TeleBot):
                 expression = data[str(message.from_user.id)]
                 bot.send_message(message.from_user.id, 'Your regexp is: {}'.format(expression))
             except KeyError:
-                bot.send_message(message.from_user.id, 'You are not podpischik. Use help')
+                bot.send_message(message.from_user.id, 'You are not subscriber. Add your regexp. If You have any questions use /help')
 
 
         @bot.message_handler(commands=self.dashboards)
