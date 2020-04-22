@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import re
 import ast
 import sys
 import json
@@ -11,6 +12,7 @@ import subprocess
 from bot import Bot
 from optparse import OptionParser
 from collections import namedtuple
+from datetime import datetime as dt
 
 Alarm = namedtuple('Alarm', 'alertname startsAt node')
 
@@ -89,6 +91,9 @@ def run(host, port):
     all_alarms = []
     config = load_config(DEFAULT_CONFIG)
     bot = Bot(config)
+    with open('users', 'rb') as users:
+        users = json.load(users, encoding='utf8')
+    print('firs load users: ', users)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
@@ -113,8 +118,14 @@ def run(host, port):
                 current_alarm = make_current_alarm(alarm_description)
                 if not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
-                    for user in config['user_list']:
-                        bot.send_message(user, alarm_description)
+                    if os.path.getmtime('users') > dt.today().timestamp():
+                        with open('users', 'rb') as users:
+                            users = json.load(users, encoding='utf8')
+                    print('users: ', users)
+                    for user in users:
+                        res = re.findall(r'%s' % re.escape(users[user].lower()), current_alarm.alertname.lower())
+                        if res:
+                            bot.send_message(user, alarm_description)
             client_socket.close()
     server_socket.close()
 
