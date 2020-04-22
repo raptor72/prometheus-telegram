@@ -90,12 +90,11 @@ def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
             data = json.load(conf, encoding='utf8')
-        if len(data) != 8:
+        if len(data) != 4:
             logging.error(f'Wrong count of config params. Should be 8 but exists is {len(data)}')
             return False
         for key in data.keys():
-            if key in ['apihelper_proxy', 'grafana_token', 'image_path',
-                       'grafana_url', 'bot_token', 'user_list', 'logfile', 'admin_id']:
+            if key in ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token']:
                 continue
             else:
                 logging.error(f'Wrong config walue for {key}')
