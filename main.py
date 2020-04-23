@@ -118,7 +118,8 @@ def run(host, port, conf):
     config = load_config(conf)
     bot = Bot(config)
     users = load_users(config['users_file'])
-    logging.debug(f'Firs load users is: {users}')
+    users_reload_time = dt.today().timestamp()
+    logging.info(f'Firs load users is: {users}')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
@@ -143,9 +144,10 @@ def run(host, port, conf):
                 current_alarm = make_current_alarm(alarm_description)
                 if current_alarm and not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
-                    if os.path.getmtime(config['users_file']) > dt.today().timestamp():
+                    if os.path.getmtime(config['users_file']) > users_reload_time:
                         users = load_users(config['users_file'])
-                    logging.info(f'Users is {users}')
+                        users_reload_time = dt.today().timestamp()
+                        logging.info(f'Reload users is {users}')
                     if len(users) > 0:
                         for user in users:
                             if users[user] in ['*', 'all', '\w', 'All', 'ALL']:
