@@ -32,6 +32,12 @@ def load_config(config_path):
     return config
 
 
+def load_users(users_file):
+    with open(users_file, 'rb') as users:
+        users = json.load(users, encoding='utf8')
+    return users
+
+
 def read_all(sock, maxbuff, TIMEOUT=5):
     data = b''
     sock.settimeout(TIMEOUT)
@@ -108,8 +114,7 @@ def run(host, port, conf):
     all_alarms = []
     config = load_config(conf)
     bot = Bot(config)
-    with open(config['users_file'], 'rb') as users:
-        users = json.load(users, encoding='utf8')
+    users = load_users(config['users_file'])
     logging.debug(f'Firs load users is: {users}')
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -136,8 +141,7 @@ def run(host, port, conf):
                 if not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
                     if os.path.getmtime(config['users_file']) > dt.today().timestamp():
-                        with open(config['users_file'], 'rb') as users:
-                            users = json.load(users, encoding='utf8')
+                        users = load_users(config['users_file'])
                     logging.info(f'Users is {users}')
                     if len(users) > 0:
                         for user in users:
