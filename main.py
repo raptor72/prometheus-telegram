@@ -151,11 +151,10 @@ def run(host, port, conf):
                     if len(users) > 0:
                         for user in users:
                             if users[user] in ['*', 'all', '\w', 'All', 'ALL']:
-                                res = re.findall('\w', current_alarm.alertname.lower())
-                            else:
-                                res = re.findall(r'%s' % re.escape(users[user].lower()), current_alarm.alertname.lower())
-                            if res:
                                 bot.send_message(user, alarm_description)
+                            else:
+                                if re.findall(r'%s' % users[user].lower(), current_alarm.alertname.lower()):
+                                    bot.send_message(user, alarm_description)
             client_socket.close()
     server_socket.close()
 
