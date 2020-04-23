@@ -128,6 +128,15 @@ default_config не добавлен в репозиторий, поскольк
 
     pytest
 
+Для ручной проверки бота можно отправить POST запрос с валидным json:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -A "Alertmanager/0.20.0" \
+-d '{"status":"resolved","alerts":[{"labels":{"alertname":"Loadaverage"},\
+"startsAt":"2020-04-24T17:49:29.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}' \
+http://127.0.0.1:8080/
+```
+
 ## Контейнеризация
 
 Для сборки докер-образа используйте команду:
