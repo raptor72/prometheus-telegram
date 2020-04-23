@@ -76,18 +76,21 @@ def generate_response(request):
 
 
 def make_current_alarm(alarm_description):
+    current_alarm = None
     d = {}
     try:
         d = ast.literal_eval(alarm_description)
-    except SyntaxError:
-        logging.error('Uncorrect json syntax in received alarm_description')
-    try:
-        alertname = d['alerts'][0]['labels']['alertname']
+        try:
+            alertname = d['alerts'][0]['labels']['alertname']
+            startsAt = datetime.datetime.strptime(d['alerts'][0]['startsAt'][:26], '%Y-%m-%dT%H:%M:%S.%f').strftime(
+                '%Y-%m-%dT%H:%M:%S.%f')
+            node = d['externalURL']
+            current_alarm = Alarm(alertname, startsAt, node)
+            return current_alarm
+        except:
+            logging.error('Could not parse alertname')
     except:
-        logging.error('Could not parse alertname')
-    startsAt = datetime.datetime.strptime(d['alerts'][0]['startsAt'][:26], '%Y-%m-%dT%H:%M:%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%f')
-    node = d['externalURL']
-    current_alarm = Alarm(alertname, startsAt, node)
+        logging.error('Uncorrect json syntax in received alarm_description')
     return current_alarm
 
 
@@ -138,7 +141,7 @@ def run(host, port, conf):
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
                 client_socket.sendall((response_prase + str(code)).encode())
                 current_alarm = make_current_alarm(alarm_description)
-                if not current_alarm in all_alarms:
+                if current_alarm and not current_alarm in all_alarms:
                     all_alarms.append(current_alarm)
                     if os.path.getmtime(config['users_file']) > dt.today().timestamp():
                         users = load_users(config['users_file'])
