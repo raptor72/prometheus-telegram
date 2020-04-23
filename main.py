@@ -14,7 +14,7 @@ from optparse import OptionParser
 from collections import namedtuple
 from datetime import datetime as dt
 
-Alarm = namedtuple('Alarm', 'alertname startsAt node')
+Alarm = namedtuple('Alarm', 'alertname status startsAt node')
 
 DEFAULT_CONFIG = './default_config'
 
@@ -82,10 +82,11 @@ def make_current_alarm(alarm_description):
         d = ast.literal_eval(alarm_description)
         try:
             alertname = d['alerts'][0]['labels']['alertname']
+            status = d['status']
             startsAt = datetime.datetime.strptime(d['alerts'][0]['startsAt'][:26], '%Y-%m-%dT%H:%M:%S.%f').strftime(
                 '%Y-%m-%dT%H:%M:%S.%f')
             node = d['externalURL']
-            current_alarm = Alarm(alertname, startsAt, node)
+            current_alarm = Alarm(alertname, status, startsAt, node)
             return current_alarm
         except:
             logging.error('Could not parse alertname')
@@ -139,9 +140,10 @@ def run(host, port, conf):
                 continue
             if request:
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
-                client_socket.sendall((response_prase + str(code)).encode())
+                client_socket.sendall((response_prase + 'Connection: close\r\n\r\n').encode())
                 current_alarm = make_current_alarm(alarm_description)
                 if current_alarm and not current_alarm in all_alarms:
+                    logging.info(f'current_alarm is: {current_alarm}')
                     all_alarms.append(current_alarm)
                     if os.path.getmtime(config['users_file']) > users_reload_time:
                         users = load_users(config['users_file'])
