@@ -94,3 +94,33 @@ def test_parse_correct_request(arguments):
     assert 'HTTP/1.1 200 OK' in response_prase
     assert code == 200
     assert alarm_description is not None
+
+@pytest.mark.parametrize(
+    "arguments", [
+    """GET / HTTP/1.1\r\nUser-Agent: Alertmanager\r\nContent-Type:
+       application/json\r\n\r\n{"receiver":"tlg-bot")
+    """,
+    """HEAD / HTTP/1.1\r\nUser-Agent: Alertmanager\r\nContent-Type:
+        application/json\r\n\r\n{"receiver":"tlg-bot")
+    """
+])
+def test_uncorrect_method(arguments):
+    response_prase, code, alarm_description = generate_response(arguments)
+    assert 'HTTP/1.1 405 Method not allowed' in response_prase
+    assert code == 405
+    assert alarm_description is None
+
+@pytest.mark.parametrize(
+    "arguments", [
+    """POST / HTTP/1.1\r\nUser-Agent: Curl\r\nContent-Type:
+       application/json\r\n\r\n{"receiver":"tlg-bot")
+    """,
+    """POST / HTTP/1.1\r\nUser-Agent: Mozilla\r\nContent-Type:
+        application/json\r\n\r\n{"receiver":"tlg-bot")
+    """
+])
+def test_uncorrect_user_agent(arguments):
+    response_prase, code, alarm_description = generate_response(arguments)
+    assert 'HTTP/1.1 400 Unsupported sender' in response_prase
+    assert code == 400
+    assert alarm_description is None
