@@ -75,9 +75,12 @@ def generate_response(request):
     return ('HTTP/1.1 200 OK\r\n', 200, alarm_description)
 
 
-def make_current_alarm(alarm_description):
+def make_current_alarm(response_prase, code, alarm_description):
     current_alarm = None
     d = {}
+    if code != 200:
+        logging.error(f'{response_prase}')
+        return current_alarm
     try:
         d = ast.literal_eval(alarm_description)
         try:
@@ -94,6 +97,13 @@ def make_current_alarm(alarm_description):
         logging.error('Uncorrect json syntax in received alarm_description')
     return current_alarm
 
+
+def generate_headers(response_prase):
+    server = 'Server: python ' + sys.version.split('[')[0].strip() + ' ' +  sys.version.split('[')[1].strip().replace(']', '') + '\r\n'
+    date = 'Date: ' + datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT') + '\r\n'
+    connection = 'Connection: close\r\n\r\n'
+    headers = ''.join([response_prase, server, date, connection])
+    return headers
 
 def check_config(config_path):
     try:
@@ -140,8 +150,9 @@ def run(host, port, conf):
                 continue
             if request:
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
-                client_socket.sendall((response_prase + 'Connection: close\r\n\r\n').encode())
-                current_alarm = make_current_alarm(alarm_description)
+#                client_socket.sendall((response_prase + 'Connection: close\r\n\r\n').encode())
+                client_socket.sendall(generate_headers(response_prase).encode())
+                current_alarm = make_current_alarm(response_prase, code, alarm_description)
                 if current_alarm and not current_alarm in all_alarms:
                     logging.info(f'current_alarm is: {current_alarm}')
                     all_alarms.append(current_alarm)
