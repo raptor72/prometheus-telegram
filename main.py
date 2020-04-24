@@ -105,6 +105,7 @@ def generate_headers(response_prase):
     headers = ''.join([response_prase, server, date, connection])
     return headers
 
+
 def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
