@@ -150,7 +150,6 @@ def run(host, port, conf):
                 continue
             if request:
                 response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
-#                client_socket.sendall((response_prase + 'Connection: close\r\n\r\n').encode())
                 client_socket.sendall(generate_headers(response_prase).encode())
                 current_alarm = make_current_alarm(response_prase, code, alarm_description)
                 if current_alarm and not current_alarm in all_alarms:

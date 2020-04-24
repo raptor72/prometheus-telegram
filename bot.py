@@ -36,6 +36,12 @@ def get_grafana_panels(g_token, g_url, e_dash):
     return panels
 
 
+def grafana_attached(g_token, g_url):
+    if g_token and g_url != "None":
+        return get_grafana_dashboards(g_token, g_url)
+    return None
+
+
 def download_image(dasboard, panelId, g_url, g_token, delta=12):
     now = datetime.datetime.now()
     past = datetime.datetime.now() - datetime.timedelta(hours=delta)
@@ -57,8 +63,9 @@ class Bot(telebot.TeleBot):
     def __init__(self, config):
         super().__init__(config['bot_token'])
         bot = self
-        self.dashboards = get_grafana_dashboards(config['grafana_url'], config['grafana_token'])
         apihelper.proxy = config['apihelper_proxy']
+        self.dashboards = grafana_attached(config['grafana_url'], config['grafana_token'])
+
 
         def prepare_keyboard(lst, add_slash=False):
             user_markup = telebot.types.ReplyKeyboardMarkup()
@@ -75,8 +82,11 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=['start'])
         def handle_start(message):
-            bot.send_message(message.from_user.id, 'Bot starting. Add your alarm subscription by /regexp command. For more details use /help',
-                             reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+            start_message = 'Bot starting. Add your alarm subscription by /regexp command. For more details use /help'
+            if self.dashboards:
+                bot.send_message(message.from_user.id, start_message, reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+            else:
+                bot.send_message(message.from_user.id, start_message)
 
 
         @bot.message_handler(commands=['help'])
@@ -117,13 +127,14 @@ class Bot(telebot.TeleBot):
 
         @bot.message_handler(commands=self.dashboards)
         def handle_dashboards(message):
-            global dashboard, panels_title, panels
-            dashboard = message.text
-            panels = get_grafana_panels(config['grafana_token'], config['grafana_url'] , message.text.replace('/',''))
-            panels_title = []
-            for i in panels:
-                panels_title.append(i['title'])
-            bot.send_message(message.from_user.id, 'Valid dashboard', reply_markup=prepare_keyboard(panels_title))
+            if self.dashboards:
+                global dashboard, panels_title, panels
+                dashboard = message.text
+                panels = get_grafana_panels(config['grafana_token'], config['grafana_url'] , message.text.replace('/',''))
+                panels_title = []
+                for i in panels:
+                    panels_title.append(i['title'])
+                bot.send_message(message.from_user.id, 'Valid dashboard', reply_markup=prepare_keyboard(panels_title))
 
 
         @bot.message_handler(content_types=['text'])
@@ -134,23 +145,24 @@ class Bot(telebot.TeleBot):
                     if i['title'] == title:
                         return i['id']
 
-            try:
+            if self.dashboards:
+                try:
                 # print(globals())
-                if message.text == 'go back':
-                    bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
-                if message.text in panels_title:
-                    try:
-                        id = get_id_by_title(panels, message.text)
-                        bot.send_message(message.from_user.id, 'Prepare download image')
-                        screenshot = download_image(dashboard.replace('/',''), str(id), config['grafana_url'], config['grafana_token'])
-                        bot.send_photo(message.from_user.id, screenshot)
-                    except:
-                        logging.info('Could not send image')
-                else:
-                    if message.text != 'go back':
-                        bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
-            except NameError:
-                 bot.send_message(message.from_user.id, 'You should choice correct dashboard or type right command',
-                                  reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+                    if message.text == 'go back':
+                        bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
+                    if message.text in panels_title:
+                        try:
+                            id = get_id_by_title(panels, message.text)
+                            bot.send_message(message.from_user.id, 'Prepare download image')
+                            screenshot = download_image(dashboard.replace('/',''), str(id), config['grafana_url'], config['grafana_token'])
+                            bot.send_photo(message.from_user.id, screenshot)
+                        except:
+                            logging.info('Could not send image')
+                    else:
+                        if message.text != 'go back':
+                            bot.send_message(message.from_user.id, 'Could not find dashboard: ' + message.text)
+                except NameError:
+                     bot.send_message(message.from_user.id, 'You should choice correct dashboard or type right command',
+                                      reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
 
 
