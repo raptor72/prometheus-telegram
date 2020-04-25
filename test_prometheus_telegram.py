@@ -124,3 +124,62 @@ def test_uncorrect_user_agent(arguments):
     assert 'HTTP/1.1 400 Unsupported sender' in response_prase
     assert code == 400
     assert alarm_description is None
+
+@pytest.mark.parametrize(
+    "arguments", [
+    """POST / HTTP/1.1\r\nUser-Agent: Alertmanager\r\nContent-Type:
+       image/jpeg\r\n\r\n{"receiver":"tlg-bot")
+    """,
+    """POST / HTTP/1.1\r\nUser-Agent: Alertmanager\r\nContent-Type:
+       text/html\r\n\r\n{"receiver":"tlg-bot")
+    """
+])
+def test_uncorrect_user_contetn_type(arguments):
+    response_prase, code, alarm_description = generate_response(arguments)
+    assert 'HTTP/1.1 400 Unsupported Content-Type' in response_prase
+    assert code == 400
+    assert alarm_description is None
+
+
+@pytest.mark.parametrize(
+    "arguments", [
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"status":"resolved","alerts":[{"labels":{"alertname":"NetworkChange"},
+        "startsAt":"2020-04-23T17:35:31.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}"""
+])
+def test_ok_alarm_description(arguments):
+    response_prase, code, alarm_description = generate_response(arguments)
+    current_alarm = make_current_alarm(response_prase, code, alarm_description)
+    assert isinstance(current_alarm, Alarm)
+    assert current_alarm.alertname == 'NetworkChange'
+    assert current_alarm.status == 'resolved'
+    assert current_alarm.startsAt == '2020-04-23T17:35:31.014462'
+    assert current_alarm.node == 'http://linuxmint-19-xfce:9093'
+
+@pytest.mark.parametrize(
+    "arguments", [
+        #wrong json
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"status":"resolved","alerts":[{"labels":{"alertname":"NetworkChange"},
+        "startsAt":"2020-04-23T17:35:31.014462791+04:00"},"externalURL":"http://linuxmint-19-xfce:9093"}""",
+        #no status
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"alerts":[{"labels":{"alertname":"NetworkChange"},
+        "startsAt":"2020-04-23T17:35:31.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}"""
+        #no alerts
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"status":"resolved",
+        "startsAt":"2020-04-23T17:35:31.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}""",
+        #bad startsAt
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"status":"resolved","alerts":[{"labels":{"alertname":"NetworkChange"},
+        "startsAt":"20200423T17:35:31.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}""",
+        # no external url
+        """POST / HTTP/1.1\r\nHost: 127.0.0.1:8080\r\nUser-Agent: Alertmanager/0.20.0\r\nContent-Length: 1128\r\nContent-Type:
+        application/json\r\n\r\n{"status":"resolved","alerts":[{"labels":{"alertname":"NetworkChange"},
+        "startsAt":"2020-04-23T17:35:31.014462791+04:00"}]}"""
+])
+def test_wrong_alarm_description(arguments):
+    response_prase, code, alarm_description = generate_response(arguments)
+    current_alarm = make_current_alarm(response_prase, code, alarm_description)
+    assert current_alarm is None
