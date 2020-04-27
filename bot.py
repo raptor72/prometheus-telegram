@@ -115,7 +115,7 @@ class Bot(telebot.TeleBot):
 
 
         @bot.message_handler(commands=['list'])
-        def handle_regexp(message):
+        def handle_list(message):
             path = Path(config['users_file'])
             data = json.loads(path.read_text(encoding='utf-8'))
             try:
