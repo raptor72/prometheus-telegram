@@ -133,34 +133,34 @@ def run(host, port, config):
     pid = os.fork()
     if pid != 0:
         bot.polling(none_stop=True, timeout=30)
-    else:
-        while True:
-            client_socket, addr = server_socket.accept()
-            request = read_all(client_socket, maxbuff=2048)
-            logging.info(f'request is: {request}')
-            logging.info(f'address is: {addr}')
-            if len(request.strip()) == 0:
-                client_socket.close()
-                continue
-            if request:
-                response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
-                client_socket.sendall(generate_headers(response_prase).encode())
-                current_alarm = make_current_alarm(response_prase, code, alarm_description)
-                if current_alarm and not current_alarm in all_alarms:
-                    logging.info(f'current_alarm is: {current_alarm}')
-                    all_alarms.append(current_alarm)
-                    if os.path.getmtime(config['users_file']) > users_reload_time:
-                        users = load_users(config['users_file'])
-                        users_reload_time = dt.today().timestamp()
-                        logging.info(f'Reload users is {users}')
-                    if len(users) > 0:
-                        for user in users:
-                            if users[user] in ['*', 'all', '\w', 'All', 'ALL']:
-                                bot.send_message(user, alarm_description)
-                            else:
-                                if re.findall(r'%s' % users[user].lower(), current_alarm.alertname.lower()):
-                                    bot.send_message(user, alarm_description)
+
+    while True:
+        client_socket, addr = server_socket.accept()
+        request = read_all(client_socket, maxbuff=2048)
+        logging.info(f'request is: {request}')
+        logging.info(f'address is: {addr}')
+        if len(request.strip()) == 0:
             client_socket.close()
+            continue
+        if request:
+            response_prase, code, alarm_description = generate_response(request.decode('utf-8'))
+            client_socket.sendall(generate_headers(response_prase).encode())
+            current_alarm = make_current_alarm(response_prase, code, alarm_description)
+            if current_alarm and not current_alarm in all_alarms:
+                logging.info(f'current_alarm is: {current_alarm}')
+                all_alarms.append(current_alarm)
+                if os.path.getmtime(config['users_file']) > users_reload_time:
+                    users = load_users(config['users_file'])
+                    users_reload_time = dt.today().timestamp()
+                    logging.info(f'Reload users is {users}')
+                if len(users) > 0:
+                    for user in users:
+                        if users[user] in ['*', 'all', '\w', 'All', 'ALL']:
+                            bot.send_message(user, alarm_description)
+                        else:
+                            if re.findall(r'%s' % users[user].lower(), current_alarm.alertname.lower()):
+                                bot.send_message(user, alarm_description)
+        client_socket.close()
     server_socket.close()
 
 

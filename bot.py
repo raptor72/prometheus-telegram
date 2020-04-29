@@ -166,7 +166,6 @@ class Bot(telebot.TeleBot):
 
             if self.dashboards:
                 try:
-                # print(globals())
                     if message.text == 'go back':
                         bot.send_message(message.from_user.id, 'going back', reply_markup=prepare_keyboard(self.dashboards, add_slash=True))
                     if message.text in panels_title:
