@@ -190,3 +190,4 @@ if __name__ == '__main__':
             logging.exception('Fatal unexpected error')
     else:
         logging.error(f'Used wrong configuration file')
+
