@@ -26,12 +26,6 @@ REQUEST_PARAMS = {
 }
 
 
-def load_config(config_path):
-    with open(config_path, 'rb') as conf:
-        config = json.load(conf, encoding='utf8')
-    return config
-
-
 def load_users(users_file):
     with open(users_file, 'rb') as users:
         users = json.load(users, encoding='utf8')
@@ -109,25 +103,24 @@ def generate_headers(response_prase):
 def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
-            data = json.load(conf, encoding='utf8')
-        if len(data) != 5:
-            logging.error(f'Wrong count of config params. Should be 5 but exists is {len(data)}')
+            config = json.load(conf, encoding='utf8')
+        if len(config) != 5:
+            logging.error(f'Wrong count of config params. Should be 5 but exists is {len(config)}')
             return False
-        for key in data.keys():
+        for key in config.keys():
             if key in ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token', 'users_file']:
                 continue
             else:
                 logging.error(f'Wrong config walue for {key}')
                 return False
+        return config
     except json.decoder.JSONDecodeError:
-         logging.error('Syntax error in config file')
-         return False
-    return True
+        logging.error('Syntax error in config file')
+        return False
 
 
-def run(host, port, conf):
+def run(host, port, config):
     all_alarms = []
-    config = load_config(conf)
     bot = Bot(config)
     users = load_users(config['users_file'])
     users_reload_time = dt.today().timestamp()
@@ -182,10 +175,11 @@ if __name__ == '__main__':
                         format='[%(asctime)s] %(levelname).1s %(message)s', datefmt='%Y.%m.%d %H:%M:%S')
     logging.info(f'Bind address is {opts.host}')
     logging.info(f'Starting listen at {opts.port}')
-    if check_config(opts.config):
+    config = check_config(opts.config)
+    if config:
         logging.info(f'Use correct configuration file {opts.config}')
         try:
-            run(opts.host, opts.port, opts.config)
+            run(opts.host, opts.port, config)
         except:
             logging.exception('Fatal unexpected error')
     else:

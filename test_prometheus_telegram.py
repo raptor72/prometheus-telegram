@@ -66,8 +66,8 @@ def test_correct_many_config(arguments, write_empty_config):
     conf = write_empty_config
     conf.write(arguments)
     config = check_config(conf)
-    assert config is True
-
+    assert config is not None
+    assert isinstance(config, dict)
 
 @pytest.mark.parametrize(
     "arguments",
