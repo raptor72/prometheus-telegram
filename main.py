@@ -2,7 +2,6 @@
 
 import os
 import re
-import ast
 import sys
 import json
 import socket
@@ -71,12 +70,11 @@ def generate_response(request):
 
 def make_current_alarm(response_prase, code, alarm_description):
     current_alarm = None
-    d = {}
     if code != 200:
         logging.error(f'{response_prase}')
         return current_alarm
     try:
-        d = ast.literal_eval(alarm_description)
+        d = json.loads(alarm_description)
         try:
             alertname = d['alerts'][0]['labels']['alertname']
             status = d['status']
