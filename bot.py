@@ -8,28 +8,46 @@ import telebot
 import logging
 import requests
 import datetime
+import functools
 from pathlib import Path
 from telebot import apihelper
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-def get_grafana_dashboards(g_url, g_token):
+def retry(max_tries):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for n in range(1, max_tries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except:
+                    logging.info('connection lost %s times' % n)
+                    if n == max_tries:
+                        raise
+        return wrapper
+    return decorator
+
+
+@retry(3)
+def get_grafana_dashboards(g_url, g_token, timeout=10):
     dashboards_array = []
     headers = {'Content-type': 'application/json'}
     headers.update(g_token)
-    get_data_req = requests.get(g_url + '/api/search?query=&', headers=headers)
+    get_data_req = requests.get(g_url + '/api/search?query=&', headers=headers, timeout=timeout)
     pars_json = json.loads(get_data_req.text)
     for dash in pars_json:
         dashboards_array.append(dash['uri'][3::])
     return dashboards_array
 
 
-def get_grafana_panels(g_token, g_url, e_dash):
+@retry(3)
+def get_grafana_panels(g_token, g_url, e_dash, timeout=10):
     panels = []
     headers = {'Content-type': 'application/json'}
     headers.update(g_token)
-    get_dashboard = requests.get(g_url + '/api/dashboards/db/' + e_dash, headers=headers)
+    get_dashboard = requests.get(g_url + '/api/dashboards/db/' + e_dash, headers=headers, timeout=timeout)
     pars_json = json.loads(get_dashboard.text)
     for dashboard in pars_json['dashboard']['panels']:
         panels.append({'id': dashboard['id'], 'title': dashboard['title']})
@@ -42,13 +60,14 @@ def grafana_attached(g_token, g_url):
     return None
 
 
-def download_image(dasboard, panelId, g_url, g_token, delta=12):
+@retry(3)
+def download_image(dasboard, panelId, g_url, g_token, delta=12, timeout=30):
     now = datetime.datetime.now()
     past = datetime.datetime.now() - datetime.timedelta(hours=delta)
     tsnow = str(time.mktime(now.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
     tspast = str(time.mktime(past.timetuple())).split('.')[0] + str(float(now.microsecond) / 1000000).split('.')[1][0:3]
     url = ''.join([g_url, '/render/dashboard-solo/db/', dasboard, '?orgId=1&from=', tspast, '&to=', tsnow, '&panelId=', panelId, '&width=1000&height=500'])
-    rec =  requests.get(url, verify = False, headers = g_token, timeout = 30)
+    rec =  requests.get(url, verify = False, headers = g_token, timeout = timeout)
     return rec.content
 
 
