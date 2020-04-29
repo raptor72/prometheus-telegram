@@ -104,14 +104,16 @@ def check_config(config_path):
     try:
         with open(config_path, 'rb') as conf:
             config = json.load(conf, encoding='utf8')
-        if len(config) != 5:
-            logging.error(f'Wrong count of config params. Should be 5 but exists is {len(config)}')
-            return False
+        params = ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token', 'users_file']
+        for param in params:
+            try:
+                config[param]
+            except KeyError:
+                logging.error(f'Param {param} is missed in config')
+                return False
         for key in config.keys():
-            if key in ['apihelper_proxy', 'grafana_token', 'grafana_url', 'bot_token', 'users_file']:
-                continue
-            else:
-                logging.error(f'Wrong config walue for {key}')
+            if key not in params:
+                logging.error(f'Unexpected param {key}')
                 return False
         return config
     except json.decoder.JSONDecodeError:
