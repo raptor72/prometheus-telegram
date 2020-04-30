@@ -129,25 +129,15 @@ default_config не добавлен в репозиторий, поскольк
 Для ручной проверки бота можно отправить POST запрос с валидным json:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -A "Alertmanager/0.20.0" \
--d '{"status":"resolved","alerts":[{"labels":{"alertname":"Loadaverage"},\
-"startsAt":"2020-04-24T17:49:29.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}' \
+curl -X POST -H "Content-Type: application/json" -A "Alertmanager/0.20.0" -d \
+'{"status":"resolved","alerts":[{"labels":{"alertname":"Loadaverage"},"startsAt":"2020-04-24T17:49:29.014462791+04:00"}],"externalURL":"http://linuxmint-19-xfce:9093"}' \
 http://127.0.0.1:8080/
 ```
 Пример оригинального, полного запроса:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -A "Alertmanager/0.20.0" \
--d '{"receiver":"tlg-bot","status":"firing","alerts":[{"status":"firing",\
-"labels":{"alertname":"NetworkChange","severity":"critical"},\
-"annotations":{"description":"Network device count has been change","summary":"Network change"},\
-"startsAt":"2020-04-23T17:35:31.014462791+04:00","endsAt":"0001-01-01T00:00:00Z",\
-"generatorURL":"http://linuxmint-19-xfce:9090/graph?g0.ex\
-pr=sum%28node_network_address_assign_type%29+%21%3D+3u0026g0.tab=1",\
-"fingerprint":"c4fdef2e3d3728ae"}],"groupLabels":{"alertname":"NetworkChange"},\
-"commonLabels":{"alertname":"NetworkChange","severity":"critical"},\
-"commonAnnotations":{"description":"Network device count has been change",\
-"summary":"Network change"},"externalURL":"http://linuxmint-19-xfce:9093","version":"4"}' \
+-d '{"receiver":"tlg-bot","status":"firing","alerts":[{"status":"firing","labels":{"alertname":"NetworkChange","severity":"critical"},"annotations":{"description":"Network device count has been change","summary":"Network change"},"startsAt":"2020-04-23T17:35:31.014462791+04:00","endsAt":"0001-01-01T00:00:00Z","generatorURL":"http://linuxmint-19-xfce:9090/graph?g0.expr=sum%28node_network_address_assign_type%29+%21%3D+3u0026g0.tab=1","fingerprint":"c4fdef2e3d3728ae"}],"groupLabels":{"alertname":"NetworkChange"},"commonLabels":{"alertname":"NetworkChange","severity":"critical"},"commonAnnotations":{"description":"Network device count has been change","summary":"Network change"},"externalURL":"http://linuxmint-19-xfce:9093","version":"4"}' \
 http://127.0.0.1:8080/
 ```
 
