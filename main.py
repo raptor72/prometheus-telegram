@@ -7,7 +7,6 @@ import json
 import socket
 import logging
 import datetime
-import subprocess
 from bot import Bot
 from optparse import OptionParser
 from collections import namedtuple

@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-import os
-import re
 import time
 import json
 import telebot
