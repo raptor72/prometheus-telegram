@@ -1,0 +1,64 @@
+FROM centos:centos7 as centos
+
+COPY ./* /root/
+RUN cp -v /root/vtb.repo /etc/yum.repos.d/ \
+    && echo 1 | passwd root --stdin \
+    && mkdir -pv /root/sysFiles/originalRepo \
+    && mv /etc/yum.repos.d/* /root/sysFiles/originalRepo/ \
+    && mv /root/vtb.repo /etc/yum.repos.d/ \
+    && yum install -y \
+    mc \
+    gcc \
+    zip \
+    git \
+    wget \
+    sudo \
+    unzip \
+    bzip2 \
+    httpd \
+    iproute \
+    tcpdump \
+    binutils \ 
+    net-tools \
+    logrotate \
+    traceroute \
+    openssh-server \
+    python3 \
+    python-virtualenv \
+    python-sqlalchemy \
+    python-setuptools \
+    && rpm -ivh /root/jemalloc-3.6.0-1.el7.x86_64.rpm \
+    && rpm -ivh /root/python2-pip-8.1.2-8.el7.noarch.rpm \
+    && rpm -ivh /root/redis-3.2.12-2.el7.x86_64.rpm \
+    && yum localinstall -y /root/atomic-sqlite-sqlite-3.8.5-3.el7.art.x86_64.rpm \
+    && mv /lib64/libsqlite3.so.0.8.6{,-3.17} \
+    && cp /opt/atomic/atomic-sqlite/root/usr/lib64/libsqlite3.so.0.8.6 /lib64 \
+    && rm -f /root/*.rpm \
+    && rm -f /root/{Dockerfile,anaconda-ks.cfg} \
+    && source /root/httpproxy.sh \
+    && git config --global user.email "mctaras51@yandex.ru" \
+    && git config --global user.name "raptor72" \
+    && pip2 install --upgrade pip \
+    && pip3 install --upgrade pip \
+    && pip2 install lxml \
+    && pip2 install flask \
+    && pip2 install redis \
+    && pip2 install pyyaml \
+    && pip2 install pytest \
+    && pip2 install pillow \
+    && pip2 install paramiko \
+    && pip2 install requests \
+    && pip2 install coverage \
+    && pip2 install matplotlib \
+    && pip2 install beautifulsoup \
+    && pip3 install bs4 \
+    && pip3 install redis \
+    && pip3 install pandas \
+    && pip3 install django \
+    && pip3 install pyyaml \
+    && pip3 install requests \
+    && pip3 install matplotlib \
+    && pip3 install pytesseract \
+    && cd /root/ \
+    && for i in hasker poll Tests_Scoring_API OServer Scoring_API log_analyzer flask-blog AvitoPhonesParser \
+    GrafanaScreen-TlgBot; do git clone https://github.com/raptor72/$i.git; done
